@@ -180,7 +180,9 @@ async function syncGrades() {
         const sectionId = String(sectionGrade.section_id);
         const subject = await subjectForSection(sectionId);
         if (!subject) {
-            console.warn(`Skipping grades for unmapped Schoology section ${sectionId}. Add it to SECTION_SUBJECT_MAP_JSON.`);
+            const section = await getSection(sectionId);
+            const sectionTitle = section?.course_title || section?.section_title || section?.title || 'Unknown section';
+            console.warn(`Skipping grades for unmapped Schoology section ${sectionId} ("${sectionTitle}"). Add it to SECTION_SUBJECT_MAP_JSON or extend the subject-title rules.`);
             continue;
         }
 
