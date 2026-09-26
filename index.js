@@ -91,6 +91,7 @@ async function syncAssignmentInbox() {
         if (!event.id || !event.title) continue;
         const result = await notion.upsertAssignmentInbox({
             schoologyId: String(event.id),
+            sectionId: String(event.section_id || ''),
             title: event.title,
             subject: await subjectForSection(event.section_id),
             due: normalizeEventDate(event.start),
@@ -107,12 +108,26 @@ async function processApprovedAssignments() {
     const approved = await notion.getApprovedInboxItems();
     let created = 0;
     let alreadyThere = 0;
+    let needsSubject = 0;
     for (const inboxPage of approved) {
+        const subject = inboxPage.properties?.Subject?.select?.name || null;
+        const title = (inboxPage.properties?.Assignment?.title || [])
+            .map(x => x.plain_text || x.text?.content || '')
+            .join('');
+
+        if (!subject) {
+            needsSubject++;
+            console.warn(`Approval waiting for subject mapping: "${title || inboxPage.id}". Set Subject in Schoology Review or map its Section ID.`);
+            continue;
+        }
+
         const result = await notion.createSchoolTaskFromInbox(inboxPage);
+        if (!result.page?.id) throw new Error(`Approved task was not created for inbox page ${inboxPage.id}`);
+
         result.created ? created++ : alreadyThere++;
         await notion.markInboxImported(inboxPage.id);
     }
-    console.log(`Approvals: ${created} task(s) added, ${alreadyThere} already existed.`);
+    console.log(`Approvals: ${created} task(s) added, ${alreadyThere} already existed, ${needsSubject} waiting for a subject.`);
 }
 
 async function assignmentsForSection(sectionId) {
