@@ -45,7 +45,7 @@ SECTION_SUBJECT_MAP_JSON={"123456789":"Math","234567890":"French"}
 
 Allowed values are:
 
-`Math`, `History`, `Tech Design`, `Music`, `French`, `English`, `Science`.
+`Math`, `History`, `Tech Design`, `Music`, `French`, `English`, `Science`, `Gym`.
 
 If a section cannot be mapped, its grades are skipped and a warning is printed instead of writing them to the wrong class.
 
@@ -78,7 +78,7 @@ The script reads Schoology user-grade data and mirrors:
 - last-updated time
 - Schoology section / grade IDs
 
-It also mirrors Schoology-provided course/final grade rows when they are returned by the API. The integration does **not** try to invent its own weighted course average.
+It mirrors Schoology-provided course averages when they are returned by the API. If Schoology returns both a generic `final` bucket and a named grading-period grade, the generic duplicate is skipped. The integration does **not** try to invent its own weighted course average.
 
 ## Security
 
