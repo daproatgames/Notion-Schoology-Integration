@@ -102,6 +102,7 @@ async function upsertAssignmentInbox(item) {
         Type: prop.select(item.type || 'Homework'),
         'Schoology Link': prop.url(item.link),
         'Schoology ID': prop.richText(item.schoologyId),
+        'Section ID': prop.richText(item.sectionId),
         Description: prop.richText(item.description),
         'Last Synced': prop.date(new Date().toISOString()),
     };
