@@ -14,7 +14,7 @@ This fork changes the original integration into a safer school workflow:
 The sync expects these data sources:
 
 - School Tasks: `5df85cc6-c5e6-4290-98c2-10101ad9caae`
-- Schoology Assignment Inbox: `7ae0b87e-6837-44cc-8a98-bb0b7564b5a2`
+- Schoology Assignment Inbox: `c3674319-7f3f-46f6-9ccc-df678956bfa3`
 - Schoology Grades: `c54af276-c7c2-420e-8a5f-ad034d5e12e0`
 
 The current Notion setup also has a hidden `Schoology ID` property in School Tasks so approved Schoology assignments do not duplicate.
