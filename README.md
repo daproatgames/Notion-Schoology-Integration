@@ -85,3 +85,14 @@ It also mirrors Schoology-provided course/final grade rows when they are returne
 Never commit your Schoology secret or Notion token. `.env` is already ignored by git.
 
 If you run this with GitHub Actions, store credentials as GitHub Actions secrets instead.
+
+
+## Gradebook views
+
+The Notion gradebook is organized into three views:
+
+- **🎯 Current Grade** — Schoology-provided course averages, grouped by subject.
+- **📝 Graded Work** — completed grade items with a compact Score column.
+- **⏳ Awaiting Grade** — ungraded, pending, or incomplete items without fake 0% scores.
+
+Raw Schoology IDs, raw point fields, and other sync metadata stay in the database but are hidden from the normal views.
