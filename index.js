@@ -122,20 +122,30 @@ async function assignmentsForSection(sectionId) {
     return assignmentsCache.get(id);
 }
 
+function isBlank(value) {
+    return value === null || value === undefined || String(value).trim() === '';
+}
+
+function numberOrNull(value) {
+    if (isBlank(value)) return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
 function gradeDisplay(item) {
     if (Number(item.exception) === 1) return 'Excused';
     if (Number(item.exception) === 2) return 'Incomplete';
-    if (item.pending) return 'Pending';
-    if (item.grade === null || item.grade === undefined || item.grade === '') return '—';
-    const max = Number(item.max_points);
-    if (Number.isFinite(max) && max > 0) return `${item.grade}/${max}`;
+    if (item.pending === true || Number(item.pending) === 1) return 'Pending';
+    if (isBlank(item.grade)) return '—';
+    const max = numberOrNull(item.max_points);
+    if (max !== null && max > 0) return `${item.grade}/${max}`;
     return String(item.grade);
 }
 
 function gradePercent(item) {
-    const earned = Number(item.grade);
-    const max = Number(item.max_points);
-    return Number.isFinite(earned) && Number.isFinite(max) && max > 0
+    const earned = numberOrNull(item.grade);
+    const max = numberOrNull(item.max_points);
+    return earned !== null && max !== null && max > 0
         ? Math.round((earned / max) * 10000) / 100
         : null;
 }
@@ -168,8 +178,8 @@ async function syncGrades() {
                 let gradeItem = assignmentMap.get(assignmentId);
                 if (!gradeItem && grade.location) gradeItem = await schoology.getGradeItemFromLocation(grade.location);
                 const title = gradeItem?.title || `${grade.type === 'discussion' ? 'Discussion' : 'Grade item'} ${assignmentId}`;
-                const maxPoints = Number(grade.max_points ?? gradeItem?.max_points);
-                const earned = Number(grade.grade);
+                const maxPoints = numberOrNull(grade.max_points ?? gradeItem?.max_points);
+                const earned = numberOrNull(grade.grade);
 
                 await notion.upsertGrade({
                     key: `item:${sectionId}:${period.period_id}:${assignmentId}:${grade.type || 'assignment'}`,
@@ -177,8 +187,8 @@ async function syncGrades() {
                     subject,
                     kind: 'Assignment',
                     display: gradeDisplay(grade),
-                    pointsEarned: Number.isFinite(earned) ? earned : null,
-                    maxPoints: Number.isFinite(maxPoints) ? maxPoints : null,
+                    pointsEarned: earned,
+                    maxPoints: maxPoints,
                     percent: gradePercent({ ...grade, max_points: maxPoints }),
                     category: categoryMap.get(String(grade.category_id)) || '',
                     gradingPeriod: period.period_title || String(period.period_id || ''),
@@ -194,16 +204,16 @@ async function syncGrades() {
         for (const finalGrade of sectionGrade.final_grade || []) {
             const periodId = String(finalGrade.period_id || 'final');
             const value = finalGrade.grade;
-            const numeric = Number(value);
+            const numeric = numberOrNull(value);
             await notion.upsertGrade({
                 key: `final:${sectionId}:${periodId}`,
                 title: periodId === 'final' ? 'Course Average — Final' : `Course Average — ${periodTitle.get(periodId) || periodId}`,
                 subject,
                 kind: 'Course Average',
-                display: value === null || value === undefined || value === '' ? '—' : `${value}${Number.isFinite(numeric) ? '%' : ''}`,
+                display: isBlank(value) ? '—' : `${value}${numeric !== null ? '%' : ''}`,
                 pointsEarned: null,
                 maxPoints: null,
-                percent: Number.isFinite(numeric) ? numeric : null,
+                percent: numeric,
                 category: '',
                 gradingPeriod: periodTitle.get(periodId) || periodId,
                 link: null,
