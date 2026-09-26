@@ -3,7 +3,7 @@ require('dotenv').config();
 const schoology = require('./schoology.js');
 const notion = require('./notion.js');
 
-const VALID_SUBJECTS = ['Math', 'History', 'Tech Design', 'Music', 'French', 'English', 'Science'];
+const VALID_SUBJECTS = ['Math', 'History', 'Tech Design', 'Music', 'French', 'English', 'Science', 'Gym'];
 const sectionCache = new Map();
 const assignmentsCache = new Map();
 
@@ -37,6 +37,7 @@ function inferSubjectFromTitle(title = '') {
         ['French', ['french', 'français', 'francais']],
         ['English', ['english', 'language arts']],
         ['Science', ['science', 'biology', 'chemistry', 'physics']],
+        ['Gym', ['gym', 'physical education', 'phys ed', 'health and physical education', 'healthy active living', 'ppl']],
     ];
     for (const [subject, needles] of rules) {
         if (needles.some(n => t.includes(n))) return subject;
@@ -201,13 +202,25 @@ async function syncGrades() {
         }
 
         const periodTitle = new Map((sectionGrade.period || []).map(p => [String(p.period_id), p.period_title]));
-        for (const finalGrade of sectionGrade.final_grade || []) {
+        const finalGrades = sectionGrade.final_grade || [];
+        const hasNamedPeriodGrade = finalGrades.some(g => String(g.period_id || 'final') !== 'final');
+
+        for (const finalGrade of finalGrades) {
             const periodId = String(finalGrade.period_id || 'final');
+
+            // Schoology often returns both a generic "final" bucket and the real
+            // named grading-period grade. The generic row is redundant and can
+            // look like an actual year-end final mark, so hide it when a named
+            // grading-period grade is available.
+            if (periodId === 'final' && hasNamedPeriodGrade) continue;
+
             const value = finalGrade.grade;
             const numeric = numberOrNull(value);
+            const periodName = periodTitle.get(periodId) || (periodId === 'final' ? 'Overall' : periodId);
+
             await notion.upsertGrade({
                 key: `final:${sectionId}:${periodId}`,
-                title: periodId === 'final' ? 'Course Average — Final' : `Course Average — ${periodTitle.get(periodId) || periodId}`,
+                title: periodId === 'final' ? 'Current Grade' : `Current Grade — ${periodName}`,
                 subject,
                 kind: 'Course Average',
                 display: isBlank(value) ? '—' : `${value}${numeric !== null ? '%' : ''}`,
@@ -215,7 +228,7 @@ async function syncGrades() {
                 maxPoints: null,
                 percent: numeric,
                 category: '',
-                gradingPeriod: periodTitle.get(periodId) || periodId,
+                gradingPeriod: periodName,
                 link: null,
                 sectionId,
                 lastUpdated: new Date().toISOString(),
