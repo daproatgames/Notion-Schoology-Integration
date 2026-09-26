@@ -32,7 +32,7 @@ function inferSubjectFromTitle(title = '') {
     const rules = [
         ['Math', ['math', 'mathematics', 'algebra', 'functions', 'calculus']],
         ['History', ['history', 'social studies']],
-        ['Tech Design', ['tech design', 'technology design', 'design technology']],
+        ['Tech Design', ['tech design', 'technology design', 'technological design', 'design technology']],
         ['Music', ['music', 'band', 'guitar']],
         ['French', ['french', 'français', 'francais']],
         ['English', ['english', 'language arts']],
